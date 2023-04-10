@@ -11,6 +11,8 @@ import os
 from app.models import Movie
 from app.forms import MovieForm
 from werkzeug.utils import secure_filename
+import datetime
+from flask_wtf.csrf import generate_csrf
 
 
 ###
@@ -28,11 +30,13 @@ def movies():
 
     if form.validate_on_submit():
         title = form.title.data
-        decription = form.decription.data
+        description = form.description.data
         poster = form.poster.data
 
-        postername = secure_filename(poster.postername)
-        image.save(os.path.join(app.config['UPLOAD_FOLDER'], postername))
+        filename = secure_filename(poster.filename)
+        image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+        created_at = datetime.datetime.now()
 
         movie = Movie(title, description, poster, created_at)
         db.session.add(movie)
@@ -44,12 +48,20 @@ def movies():
             movies_data.append({
                 "message": "Movie Successfully added",
                 "title": movie.title,
-                "poster": movie.poster,
-                "description": movie.description
+                "description": movie.description,
+                "poster": movie.filename
             })
-            movies_data.append(movie.serialize())
 
         return jsonify(data=movies_data)
+    else:
+        return form_errors(form)
+
+@app.route('/api/v1/csrf-token', methods=['GET'])
+def get_csrf():
+    return jsonify({'csrf_token': generate_csrf()})
+
+
+
 
 ###
 # The functions below should be applicable to all Flask apps.
@@ -58,17 +70,15 @@ def movies():
 # Here we define a function to collect form errors from Flask-WTF
 # which we can later use
 def form_errors(form):
-    error_messages = []
-    """Collects form errors"""
-    for field, errors in form.errors.items():
-        for error in errors:
-            message = u"Error in the %s field - %s" % (
-                    getattr(form, field).label.text,
-                    error
-                )
-            error_messages.append(message.serialize())
+    errors = []
+    for field, error in form.errors.items():
+        errors.append({
+            "field": field,
+            "message": error[0]
+        })
 
-    return jsonify(data=error_messages)
+    return jsonify(errors=errors)
+
 
 @app.route('/<file_name>.txt')
 def send_text_file(file_name):

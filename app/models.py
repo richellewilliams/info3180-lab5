@@ -12,7 +12,7 @@ class Movie(db.Model):
 
     def __init__(self, title, description, poster, created_at):
         self.title = title
-        self.decription = description
+        self.description = description
         self.poster = poster
         self.created_at = created_at
 
