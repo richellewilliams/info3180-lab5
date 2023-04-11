@@ -29,7 +29,7 @@ function fetchMovies(){
     fetch('/api/v1/movies')
     .then((response) => response.json())
     .then((data) => {
-        //console.log(data);
+        console.log(data);
         movies.value = data.data;
     })
     .catch((error) => {

@@ -1,6 +1,14 @@
 <template>
     <div class="about container">
         <h2 class="pb-4">Movie Form</h2>
+        
+        <div v-if="successMessage" class="alert alert-success" role="alert">{{ successMessage }}</div>
+        <div v-if="errors.length > 0">
+            <div v-for="error in errors" :key="error.field">
+                <li class="alert alert-danger" role="alert">Error in {{ error.field }} - {{ error.message }}</li>
+            </div>
+        </div>
+
         <form @submit.prevent="saveMovie" id="movieForm">
             <div class="form-group">
                 <div class="form-group pb-4">
@@ -14,7 +22,7 @@
                 </div>
 
                 <div class="form-group pb-4">
-                    <label for="poster" class="form-label">Photo Upload</label>
+                    <label for="poster" class="form-label">Poster Photo Upload</label>
                     <input type="file" name="poster" class="form-control"/>
                 </div>
                 <button class="btn btn-primary" type="submit">Submit</button>
@@ -26,8 +34,10 @@
 <script setup>
 import { ref, onMounted } from "vue";
 let csrf_token = ref("");
+let successMessage = ref("");
+let errors = ref([]);
 
-function getCsrfToken() {
+function getCsrfToken() { 
     fetch('/api/v1/csrf-token')
     .then((response) => response.json())
     .then((data) => {
@@ -55,11 +65,17 @@ function saveMovie() {
         return response.json();
     })
     .then(function (data) {
-        // display a success message
+        if (data.errors && data.errors.length > 0) {
+            errors.value = data.errors;
+        } else {
+            successMessage.value = "File Upload Successful";
+            errors.value = "";
+        }
         console.log(data);
     })
     .catch(function (error) {
         console.log(error);
+        errors.value = error.data;
     });
 };
 </script>
